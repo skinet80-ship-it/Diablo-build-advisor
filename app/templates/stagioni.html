@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Stagioni - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+{% if stagione_attiva %}
+<section id="stagione-attiva">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="7" stroke="#d4af37" stroke-width="2"/><path d="M8.21 13.82 7 23l4-3.33 1.21-1.25M12 8V12" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Stagione attiva</h2>
+    <div class="card stagione-dettaglio">
+        <div class="card-header"><span class="card-title">Stagione {{ stagione_attiva['numero'] }} &mdash; {{ stagione_attiva['nome'] }}</span></div>
+        <div class="card-body">
+            {% if stagione_attiva['meccaniche'] %}<div class="stat-row"><span class="stat-label">Meccaniche</span><span class="stat-value">{{ stagione_attiva['meccaniche'] }}</span></div>{% endif %}
+            {% if stagione_attiva['note'] %}<div class="stat-row"><span class="stat-label">Note</span><span class="stat-value">{{ stagione_attiva['note'] }}</span></div>{% endif %}
+            <div class="stat-row"><span class="stat-label">Stato</span><span class="stat-value"><span class="badge badge-{{ stagione_attiva['stato'] }}">{{ stagione_attiva['stato'] }}</span></span></div>
+            {% if stagione_attiva['fonte'] %}<div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ stagione_attiva['fonte'] }}</span></div>{% endif %}
+            {% if stagione_attiva['data_verifica'] %}<div class="stat-row"><span class="stat-label">Data verifica</span><span class="stat-value">{{ stagione_attiva['data_verifica'] }}</span></div>{% endif %}
+        </div>
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9v2M12 13v2M4.93 9.93l1.41 1.41M17.66 9.93l-1.41 1.41M12 17l-1.41 1.41M12 17l1.41 1.41M3.34 5.66l1.41-1.41M18.66 5.66l-1.41-1.41M16 12a2 2 0 11-4 0 2 2 0 004 0z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Da verificare</h3>
+    <p>Nessuna stagione impostata come attiva.</p>
+</section>
+{% endif %}
+
+{% if stagione_list %}
+<section id="elenco-stagioni">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7l-8-4-8 4M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#d4af37" stroke-width="2"/></svg></span>Tutte le stagioni</h2>
+    <div class="grid stagioni-grid">
+        {% for s in stagione_list %}
+        <article class="card">
+            <div class="card-header"><span class="card-title">Stagione {{ s['numero'] }}</span></div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Nome</span><span class="stat-value">{{ s['nome'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Stato</span><span class="stat-value"><span class="badge badge-{{ s['stato'] }}">{{ s['stato'] }}</span>{% if s['stato_attivo'] %} <span class="badge badge-attiva">Attiva</span>{% endif %}</span></div>
+                <div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ s['fonte'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Data verifica</span><span class="stat-value">{{ s['data_verifica'] or '-' }}</span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9v2M12 13v2M4.93 9.93l1.41 1.41M17.66 9.93l-1.41 1.41M12 17l-1.41 1.41M12 17l1.41 1.41M3.34 5.66l1.41-1.41M18.66 5.66l-1.41-1.41M16 12a2 2 0 11-4 0 2 2 0 004 0z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Da verificare</h3>
+    <p>Nessuna stagione salvata ancora.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.stagioni-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.stagione-dettaglio { background: linear-gradient(135deg, rgba(212, 175, 55, 0.03), rgba(139, 26, 26, 0.02)); border-color: var(--border-gold); }
+</style>
+{% endblock %}

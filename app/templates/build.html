@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Build - {{ personaggio['nome'] }} - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section id="form-build">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 6v12M6 12h12" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/><path d="M5 7l7 7 7-7M19 7l-7 7-7-7" stroke="#d4af37" stroke-width="2" stroke-linecap="round"/></svg></span>{% if build_da_modificare %}Modifica build{% else %}Nuova build{% endif %}</h2>
+    <form method="POST" action="{% if build_da_modificare %}/build/{{ build_da_modificare['id'] }}/modifica{% else %}/personaggi/{{ personaggio['id'] }}/build/nuovo{% endif %}" class="form-section ornato">
+        <input type="hidden" name="build_attiva" value="0">
+
+        <div class="form-grid">
+            <div class="form-col">
+                <label for="nome_build">Nome build <span class="obbligatorio">*</span></label>
+                <input type="text" id="nome_build" name="nome_build" value="{{ build_da_modificare['nome_build'] if build_da_modificare else '' }}" required maxlength="100">
+
+                <label for="obiettivo">Obiettivo</label>
+                <input type="text" id="obiettivo" name="obiettivo" value="{{ build_da_modificare['obiettivo'] or '' if build_da_modificare else '' }}" maxlength="200">
+
+                <label style="display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    <input type="checkbox" id="build_attiva" name="build_attiva" value="1"{% if build_da_modificare and build_da_modificare['build_attiva'] %} checked{% endif %}>
+                    Build attiva
+                </label>
+            </div>
+        </div>
+
+        <label for="abilita">Abilità</label>
+        <textarea id="abilita" name="abilita" rows="3">{{ build_da_modificare['abilita'] or '' if build_da_modificare else '' }}</textarea>
+
+        <label for="equipaggiamento">Equipaggiamento</label>
+        <textarea id="equipaggiamento" name="equipaggiamento" rows="3">{{ build_da_modificare['equipaggiamento'] or '' if build_da_modificare else '' }}</textarea>
+
+        <label for="aspetti_leggendari">Aspetti leggendari</label>
+        <textarea id="aspetti_leggendari" name="aspetti_leggendari" rows="3">{{ build_da_modificare['aspetti_leggendari'] or '' if build_da_modificare else '' }}</textarea>
+
+        <label for="tempra">Tempra</label>
+        <textarea id="tempra" name="tempra" rows="3">{{ build_da_modificare['tempra'] or '' if build_da_modificare else '' }}</textarea>
+
+        <label for="paragon">Paragon e glifi</label>
+        <textarea id="paragon" name="paragon" rows="3">{{ build_da_modificare['paragon'] or '' if build_da_modificare else '' }}</textarea>
+
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="3">{{ build_da_modificare['note'] or '' if build_da_modificare else '' }}</textarea>
+
+        <button type="submit">Salva build</button>
+        {% if build_da_modificare %}
+        <a href="{{ url_for('main.lista_build', personaggio_id=personaggio['id']) }}" class="btn-annulla secondary">Annulla</a>
+        {% endif %}
+    </form>
+</section>
+
+{% if build_list %}
+<section id="elenco-build">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M9 9h6m0 0v6m0-6l-3 3M15 9l-3-3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Build di {{ personaggio['nome'] }}</h2>
+    <div class="grid builds-grid">
+        {% for b in build_list %}
+        <article class="card build-card">
+            <div class="card-header">
+                <span class="card-title">{{ b['nome_build'] }}</span>
+                {% if b['build_attiva'] %}<span class="badge badge-attiva">Attiva</span>{% else %}<span class="badge badge-inattiva">Inattiva</span>{% endif %}
+            </div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Obiettivo</span><span class="stat-value">{{ b['obiettivo'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Creata</span><span class="stat-value">{{ b['data_creazione'][:10] if b['data_creazione'] else '-' }}</span></div>
+            </div>
+            <div class="card-actions">
+                <button type="button" onclick="apriModifica({{ b['id'] }}, '{{ b['nome_build']|replace("'", "\\'") }}', '{{ b['obiettivo']|replace("'", "\\'") or '' }}', '{{ b['abilita']|replace("'", "\\'") or '' }}', '{{ b['equipaggiamento']|replace("'", "\\'") or '' }}', '{{ b['aspetti_leggendari']|replace("'", "\\'") or '' }}', '{{ b['tempra']|replace("'", "\\'") or '' }}', '{{ b['paragon']|replace("'", "\\'") or '' }}', '{{ b['note']|replace("'", "\\'") or '' }}', {{ 'true' if b['build_attiva'] else 'false' }})" class="btn-annulla secondary">Modifica</button>
+                <form method="POST" action="/build/{{ b['id'] }}/elimina" style="display:inline;" onsubmit="return confirm('Eliminare questa build? L'operazione è irreversibile.');">
+                    <button type="submit" class="btn-annulla danger" style="width:auto;">Elimina</button>
+                </form>
+            </div>
+
+            {% set versioni = build_versioni_map.get(b['id'], []) %}
+            {% if versioni %}
+            <div class="sezione-abilita">
+                <div class="label">Versioni e abilità</div>
+                {% for v in versioni %}
+                <div class="versione-card">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 0.5rem;">
+                        <strong style="font-size: 0.95rem;">{{ v['nome_build'] }}</strong>
+                        <span class="badge {% if v['stato'] == 'verificata' %}badge-attiva{% else %}badge-inattiva{% endif %}" style="font-size: 0.75rem;">{{ v['stato'] }}</span>
+                        <a href="/build_versioni/{{ v['id'] }}/abilita" class="btn-annulla secondary" style="font-size:0.7rem; padding:0.2rem 0.4rem;">Gestisci abilità</a>
+                        <a href="/build_versioni/{{ v['id'] }}/equipaggiamento" class="btn-annulla secondary" style="font-size:0.7rem; padding:0.2rem 0.4rem;">Equipaggiamento</a>
+                    </div>
+                    {% if v['abilita'] %}
+                    <ul style="list-style:none; padding:0; margin:0;">
+                        {% for ab in v['abilita'] %}
+                        <li style="display:flex; justify-content:space-between; align-items:center; padding:0.35rem 0; border-bottom:1px solid var(--border-subtle); font-size:0.9rem;">
+                            <span>
+                                <strong>{{ ab['abilita_nome'] }}</strong>
+                                {% if ab['versione_descrizione'] %} <em>({{ ab['versione_descrizione'][:40] }})</em>{% endif %}
+                                <br><small style="color:var(--text-muted);">Livello: {{ ab['livello'] }}</small>
+                                {% if ab['nota'] %} <br><small style="color:var(--text-muted);">Nota: {{ ab['nota'] }}</small>{% endif %}
+                                <br><small style="color:var(--text-muted);">Versione: {{ ab['versione_stato'] }}</small>
+                            </span>
+                            <div style="display:flex; gap:0.25rem;">
+                                <form method="POST" action="/build_versioni_abilita/{{ ab['id'] }}/modifica" style="display:inline;" onsubmit="return confirm('Modificare questa abilità?');">
+                                    <input type="number" name="livello" value="{{ ab['livello'] }}" min="1" style="width:4rem;">
+                                    <input type="text" name="nota" value="{{ ab['nota'] or '' }}" placeholder="nota" style="width:6rem;">
+                                    <button type="submit" class="btn-annulla secondary" style="font-size:0.75rem; padding:0.2rem 0.5rem;">Salva</button>
+                                </form>
+                                <form method="POST" action="/build_versioni_abilita/{{ ab['id'] }}/rimuovi" style="display:inline;" onsubmit="return confirm('Rimuovere questa abilità dalla versione?');">
+                                    <button type="submit" class="btn-annulla danger" style="font-size:0.75rem; padding:0.2rem 0.5rem;">Rimuovi</button>
+                                </form>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <div style="font-size:0.85rem; color:var(--text-muted); font-style:italic;">Nessuna abilità associata</div>
+                    {% endif %}
+
+                    <form method="POST" action="/build_versioni/{{ v['id'] }}/abilita/aggiungi" style="margin-top:0.75rem; padding-top:0.5rem; border-top:1px solid var(--border-subtle);">
+                        <label style="font-size:0.8rem; color:var(--text-muted);">Aggiungi abilità:</label><br>
+                        <select name="abilita_id" id="abilita_select_{{ v['id'] }}" required style="width:100%; padding:0.3rem; margin-bottom:0.25rem; font-size:0.85rem;" onchange="caricaVersioniAbilita(this, 'abilita_versioni_select_{{ v['id'] }}')">
+                            <option value="">-- Seleziona abilità --</option>
+                            {% if v['classe_id'] %}
+                            {% for ab in abilita_per_classe.get(v['classe_id'], []) %}
+                            <option value="{{ ab['id'] }}">{{ ab['nome'] }} ({{ ab['codice_identificativo'] }})</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                        <select name="abilita_versioni_id" id="abilita_versioni_select_{{ v['id'] }}" required style="width:100%; padding:0.3rem; margin-bottom:0.25rem; font-size:0.85rem;">
+                            <option value="">-- Prima seleziona un'abilità --</option>
+                        </select>
+                        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:0.25rem; font-size:0.85rem;">
+                            <input type="number" name="livello" placeholder="Livello" min="1" value="1" style="padding:0.3rem;">
+                            <input type="text" name="nota" placeholder="Nota" style="padding:0.3rem;">
+                        </div>
+                        <button type="submit" class="btn-annulla secondary" style="font-size:0.75rem; margin-top:0.25rem;">Aggiungi</button>
+                        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem;">Seleziona un'abilità della classe della build e la sua versione storica.</p>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="font-size:0.85rem; color:var(--text-muted); font-style:italic; margin-top:0.5rem;">Nessuna versione di build disponibile</div>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M9 9h6m0 0v6m0-6l-3 3M15 9l-3-3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna build salvata</h3>
+    <p>Creane una usando il modulo sopra.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function apriModifica(id, nome, obiettivo, abilita, equipaggiamento, aspetti, tempra, paragon, note, attiva) {
+    const form = document.getElementById('form-build');
+    form.action = '/build/' + id + '/modifica';
+    document.getElementById('nome_build').value = nome;
+    document.getElementById('obiettivo').value = obiettivo || '';
+    document.getElementById('abilita').value = abilita || '';
+    document.getElementById('equipaggiamento').value = equipaggiamento || '';
+    document.getElementById('aspetti_leggendari').value = aspetti || '';
+    document.getElementById('tempra').value = tempra || '';
+    document.getElementById('paragon').value = paragon || '';
+    document.getElementById('note').value = note || '';
+    document.getElementById('build_attiva').checked = attiva;
+    window.scrollTo(0, 0);
+}
+async function caricaVersioniAbilita(selectAbilita, idSelectVersioni) {
+    const abilitaId = selectAbilita.value;
+    const selectVersioni = document.getElementById(idSelectVersioni);
+    selectVersioni.innerHTML = '<option value="">-- Caricamento... --</option>';
+    if (!abilitaId) {
+        selectVersioni.innerHTML = '<option value="">-- Prima seleziona un'abilità --</option>';
+        return;
+    }
+    try {
+        const risposta = await fetch(`/api/abilita/${abilitaId}/versioni`);
+        const dati = await risposta.json();
+        if (dati.error) {
+            selectVersioni.innerHTML = '<option value="">-- Errore caricamento --</option>';
+            return;
+        }
+        selectVersioni.innerHTML = '<option value="">-- Seleziona versione --</option>';
+        for (const v of dati.versioni) {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `${v.descrizione || 'Senza descrizione'} [${v.tipo}, ${v.stato}]`;
+            selectVersioni.appendChild(opt);
+        }
+    } catch (e) {
+        selectVersioni.innerHTML = '<option value="">-- Errore di rete --</option>';
+    }
+}
+</script>
+{% endblock %}

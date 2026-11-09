@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section class="hero-panel">
+    <div class="hero-bg"><img src="/static/img/sanctuary-bg.svg" class="hero-bg-img" alt="Sfondo Sanctuarium"/></div>
+    <div class="hero-content">
+        <div class="hero-title-block">
+            <svg class="hero-icon" width="72" height="72" viewBox="0 0 72 72" xmlns="http://www.w3.org/2000/svg">
+                <path d="M36 6 L66 36 L36 66 L6 36 Z" fill="#d4af37" stroke="#8b6b2f" stroke-width="4"/>
+                <path d="M36 12 L60 36 L36 60 L12 36 Z" fill="#1a1a1a" stroke="#8b1a1a" stroke-width="3"/>
+                <path d="M28 36 L44 36" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+                <path d="M36 28 L36 44" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/>
+                <circle cx="36" cy="36" r="4" fill="#4d0e0e" stroke="#d4af37" stroke-width="2"/>
+            </svg>
+            <h2>Diablo Build Advisor</h2>
+        </div>
+        <p>Analizza, confronta e migliora le tue build di Diablo IV. Crea personaggi, gestisci abilità e verifica l'efficacia delle tue configurazioni nel Sanctuarium.</p>
+        <div class="hero-stats">
+            <div class="stat-box">
+                <div class="stat-value">{{ personaggi|length }}</div>
+                <div class="stat-label">Personaggi</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">--</div>
+                <div class="stat-label">Build</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value">--</div>
+                <div class="stat-label">Abilità catalogate</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if stagione_attiva %}
+<section id="stagione-attiva" class="card stagione-card">
+    <h2><svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 008 0z" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Stagione attiva</h2>
+    <div class="card-body">
+        <div class="stat-row"><span class="stat-label">Stagione</span><span class="stat-value">{{ stagione_attiva['numero'] }}</span></div>
+        <div class="stat-row"><span class="stat-label">Nome</span><span class="stat-value">{{ stagione_attiva['nome'] }}</span></div>
+        {% if stagione_attiva['meccaniche'] %}<div class="stat-row"><span class="stat-label">Meccaniche</span><span class="stat-value">{{ stagione_attiva['meccaniche'] }}</span></div>{% endif %}
+        {% if stagione_attiva['fonte'] %}<div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ stagione_attiva['fonte'] }}</span></div>{% endif %}
+        {% if stagione_attiva['data_verifica'] %}<div class="stat-row"><span class="stat-label">Verifica</span><span class="stat-value">{{ stagione_attiva['data_verifica'] }}</span></div>{% endif %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Nessuna stagione attiva</h3>
+    <p>Imposta una stagione nella sezione Stagioni.</p>
+    <a href="/stagioni" class="btn-annulla">Gestisci stagioni</a>
+</section>
+{% endif %}
+
+{% if personaggi %}
+<section id="personaggi-lista" class="card personaggio-card">
+    <h2><svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#8b1a1a" stroke-width="2"/></svg>I tuoi personaggi</h2>
+    <div class="grid grid-two personaggi-grid">
+        {% for p in personaggi %}
+        <article class="card personaggio-scheda">
+            <div class="portrait-large">
+                            <img src="/static/img/class-{{ p['classe']|lower()}}.svg" class="portrait-img" alt="Ritratto {{ p['classe'] }}"/>
+                        </div>
+            <div class="scheda-titolo">
+                <img src="/static/img/class-{{ p['classe']|lower()}}.svg" class="class-icon-img" alt="{{ p['classe'] }}"/>
+                <span class="card-title">{{ p['nome'] }}</span>
+            </div>
+            <div class="scheda-statistiche">
+                <div class="stat-row"><span class="stat-label">Classe</span><span class="stat-value">{{ p['classe'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Modalità</span><span class="stat-value">{{ p['modalita'] }}</span></div>
+                {% if p['numero_stagione'] %}<div class="stat-row"><span class="stat-label">Stagione</span><span class="stat-value">{{ p['numero_stagione'] }}</span></div>{% endif %}
+                <div class="stat-row"><span class="stat-label">Livello</span><span class="stat-value">{{ p['livello_personaggio'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Paragon</span><span class="stat-value">{{ p['livello_paragon'] }}</span></div>
+            </div>
+            <div class="scheda-azioni">
+                <a href="/personaggi/{{ p['id'] }}/consigli" class="btn-annulla secondary">Consigli</a>
+                <a href="/personaggi/{{ p['id'] }}/build" class="btn-annulla secondary">Build</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#8b1a1a" stroke-width="2"/></svg>Nessun personaggio salvato</h3>
+    <p>Crea il tuo primo personaggio per iniziare a gestire build e consigli nel Sanctuarium.</p>
+    <a href="/personaggi" class="btn-annulla">Crea personaggio</a>
+</section>
+{% endif %}
+
+<section id="accessi-rapidi" class="card">
+    <h2><svg class="section-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Accessi rapidi</h2>
+    <div class="grid grid-four access-grid">
+        <a href="/personaggi" class="btn-annulla access-tile">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#d4af37" stroke-width="2"/></svg>
+            <span>Personaggi</span>
+        </a>
+        <a href="/build" class="btn-annulla access-tile">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21l-7-7 7-7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M13 18l-5-5m0 0l5-5m5 5L7 3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Build</span>
+        </a>
+        <a href="/catalogo/abilita" class="btn-annulla access-tile">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Abilità</span>
+        </a>
+        <a href="/catalogo/oggetti" class="btn-annulla access-tile">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span>Equipaggiamento</span>
+        </a>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.hero-panel {
+    position: relative;
+    border: 4px solid var(--border-gold);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: 2.75rem;
+    box-shadow: var(--shadow-raised);
+    background: #0a0a0a;
+}
+.hero-bg {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background-image:
+        radial-gradient(circle at 20% 30%, rgba(139, 26, 26, 0.12), transparent 45%),
+        radial-gradient(circle at 80% 70%, rgba(212, 175, 55, 0.05), transparent 45%);
+    pointer-events: none;
+    z-index: 0;
+}
+.hero-content {
+    position: relative; z-index: 1;
+    padding: 3rem 2.5rem;
+    text-align: center;
+}
+.hero-title-block { display: flex; align-items: center; justify-content: center; gap: 1.25rem; margin-bottom: 1rem; }
+.hero-icon { filter: drop-shadow(0 4px 12px rgba(212, 175, 55, 0.25)); }
+.hero-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.65;
+}
+.hero-title-block h2 { margin: 0; border: none; padding: 0; text-shadow: 2px 2px 0 #000; }
+.hero-stats { display: flex; justify-content: center; gap: 2.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
+.stat-box {
+    text-align: center;
+    padding: 1.25rem;
+    background: #141414;
+    border: 2px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    min-width: 140px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+}
+.stat-value { font-size: 2.5rem; color: var(--text-gold); font-weight: 800; text-shadow: 1px 1px 0 #000; }
+.stat-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.5px; margin-top: 0.3rem; }
+
+.section-icon { filter: drop-shadow(0 2px 4px rgba(139, 26, 26, 0.3)); }
+
+.portrait-large { margin: 0 auto 0.75rem; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+.scheda-titolo { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.scheda-titolo .class-icon { font-size: 2.5rem; }
+.scheda-titolo .card-title { font-size: 1.5rem; color: var(--text-gold); font-weight: 800; text-shadow: 1px 1px 0 #000; }
+.scheda-statistiche { display: flex; flex-direction: column; gap: 0.5rem; }
+.scheda-azioni { display: flex; gap: 0.75rem; margin-top: 1rem; }
+
+.personaggio-scheda { background: linear-gradient(135deg, rgba(212, 175, 55, 0.03), rgba(139, 26, 26, 0.02)); border-color: var(--border-gold); }
+.personaggi-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+
+.access-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.access-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.85rem;
+}
+.access-tile svg { filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.2)); }
+.portrait-img {
+    width: 100%;
+    height: 100%;
+    max-width: 160px;
+    max-height: 160px;
+    object-fit: cover;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6));
+}
+.class-icon-img {
+    width: 40px;
+    height: 40px;
+    filter: drop-shadow(0 2px 4px rgba(139, 26, 26, 0.3));
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

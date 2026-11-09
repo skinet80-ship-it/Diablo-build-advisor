@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Diablo Build Advisor{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css?v=D159') }}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="sanctuary-ui">
+    <div class="frame-outer"></div>
+    <div class="frame-inner"></div>
+
+    <header class="sanctuary-header">
+        <div class="logo-block">
+                    <img src="/static/img/header-ornament.svg" class="logo-icon" alt="Decorazione gotica Sanctuarium" width="56" height="56"/>
+            <div class="logo-text">
+                <h1>Diablo Build Advisor</h1>
+                <p>Companion del Sanctuarium</p>
+            </div>
+        </div>
+        <div class="header-status">
+            <span class="badge badge-online">Sanctuarium Online</span>
+            <span class="badge badge-patch">Stagione {{ stagione_numero or '7' }}</span>
+        </div>
+    </header>
+
+    <nav class="nav-sanctuary">
+        <ul class="nav-list">
+            <li><a href="/" {% if request.path == '/' %}class="nav-active"{% endif %}><span class="nav-symbol">☰</span><span class="nav-text">Dashboard</span></a></li>
+            <li><a href="/personaggi" {% if request.path.startswith('/personaggi') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Personaggi</span></a></li>
+            <li><a href="/build" {% if request.path.startswith('/build') and not request.path.startswith('/build_versioni') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21l-7-7 7-7M13 18l-5-5m0 0l5-5m5 5L7 3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Build</span></a></li>
+            <li><a href="/catalogo" {% if request.path == '/catalogo' %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Catalogo</span></a></li>
+            <li><a href="/catalogo/oggetti" {% if request.path.startswith('/catalogo/oggetti') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Oggetti</span></a></li>
+            <li><a href="/catalogo/abilita" {% if request.path.startswith('/catalogo/abilita') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Abilità</span></a></li>
+            <li><a href="/confronto" {% if request.path == '/confronto' %}class="nav-active"{% endif %}><span class="nav-symbol">⚖</span><span class="nav-text">Confronto</span></a></li>
+            <li><a href="/stagioni" {% if request.path == '/stagioni' %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 7V3m4 18V4m4 16v-3.4a4 4 0 00-.52-1.85L8.5 16.5l-.52-1.85A4 4 0 004 15.6V18M16 12a2 2 0 11-4 0 2 2 0 004 0z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Stagioni</span></a></li>
+            <li><a href="/fonti" {% if request.path == '/fonti' %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Fonti</span></a></li>
+        </ul>
+        <div class="nav-footer">
+            <span class="nav-footer-text">Sanctuarium</span>
+        </div>
+    </nav>
+
+    <main class="sanctuary-main">
+        {% with messaggi = get_flashed_messages(with_categories=true) %}
+        {% if messaggi %}
+        <div class="messaggi">
+            {% for categoria, testo in messaggi %}
+            <div class="alert alert-{{ categoria }}">{{ testo }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <nav class="nav-mobile">
+        <ul class="nav-mobile-list">
+            <li><a href="/" {% if request.path == '/' %}class="nav-active"{% endif %}><span class="nav-symbol">☰</span><span class="nav-text">Dashboard</span></a></li>
+            <li><a href="/personaggi" {% if request.path.startswith('/personaggi') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Personaggi</span></a></li>
+            <li><a href="/build" {% if request.path.startswith('/build') and not request.path.startswith('/build_versioni') %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21l-7-7 7-7M13 18l-5-5m0 0l5-5m5 5L7 3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Build</span></a></li>
+            <li><a href="/catalogo" {% if request.path == '/catalogo' %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Catalogo</span></a></li>
+            <li><a href="/stagioni" {% if request.path == '/stagioni' %}class="nav-active"{% endif %}><span class="nav-symbol"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 7V3m4 18V4m4 16v-3.4a4 4 0 00-.52-1.85L8.5 16.5l-.52-1.85A4 4 0 004 15.6V18M16 12a2 2 0 11-4 0 2 2 0 004 0z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="nav-text">Stagioni</span></a></li>
+        </ul>
+    </nav>
+
+    <footer class="sanctuary-footer">
+        <p>&copy; 2026 Diablo Build Advisor &mdash; Companion del Sanctuarium</p>
+    </footer>
+
+    <script>
+        {% block extra_js %}{% endblock %}
+    </script>
+</body>
+</html>

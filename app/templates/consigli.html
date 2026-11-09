@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Consigli - {{ personaggio['nome'] }} - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+{% if build_attiva %}
+<section id="analisi-build">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 15V3m0 0l-3 3 3 3M12 15l-3 3M12 15l3 3M9 21l9-9M9 21l9-9M21 9l-9 9M3 9l9-9" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Analisi build attiva: {{ build_attiva['nome_build'] }}</h2>
+    <p>Questa analisi si basa sui dati inseriti nella build. Se un campo è vuoto, significa che manca l'informazione.</p>
+    <table class="tabella-analisi">
+        <thead>
+            <tr><th>Sezione</th><th>Stato</th><th>Valore inserito</th></tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Obiettivo</strong></td>
+                <td>{% if build_attiva['obiettivo'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['obiettivo'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Abilità</strong></td>
+                <td>{% if build_attiva['abilita'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['abilita'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Equipaggiamento</strong></td>
+                <td>{% if build_attiva['equipaggiamento'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['equipaggiamento'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Aspetti leggendari</strong></td>
+                <td>{% if build_attiva['aspetti_leggendari'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['aspetti_leggendari'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Tempra</strong></td>
+                <td>{% if build_attiva['tempra'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['tempra'] or '-' }}</td>
+            </tr>
+            <tr>
+                <td><strong>Paragon e glifi</strong></td>
+                <td>{% if build_attiva['paragon'] %}<span class="badge badge-verificata">Presente</span>{% else %}<span class="badge badge-da-verificare">Mancante</span>{% endif %}</td>
+                <td>{{ build_attiva['paragon'] or '-' }}</td>
+            </tr>
+        </tbody>
+    </table>
+</section>
+{% elif dati_mancanti %}
+<section id="analisi-build">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 9v2M12 13v2M4.93 9.93l1.41 1.41M17.66 9.93l-1.41 1.41M12 17l-1.41 1.41M12 17l1.41 1.41M3.34 5.66l1.41-1.41M18.66 5.66l-1.41-1.41M16 12a2 2 0 11-4 0 2 2 0 004 0z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna build attiva</h2>
+    <p>Non è stata definita una build attiva per questo personaggio. Crea una build nella sezione Build per ricevere consigli mirati.</p>
+</section>
+{% endif %}
+
+{% if dati_mancanti %}
+<section id="dati-mancanti">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M17 3a1 1 0 011 1v4a1 1 0 01-1 1H3a1 1 0 01-1-1V4a1 1 0 011-1zM5 19l7-3 7 3" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Informazioni mancanti nella build</h2>
+    <p>I seguenti campi non sono ancora compilati nella build attiva:</p>
+    <ul>
+        {% for d in dati_mancanti %}
+        <li>{{ d }}</li>
+        {% endfor %}
+    </ul>
+    <p>Completa la build nella sezione Build per ottenere consigli più specifici.</p>
+</section>
+{% endif %}
+
+<section id="form-consiglio">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/></svg></span>Aggiungi consiglio</h2>
+    <form method="POST" action="/personaggi/{{ personaggio['id'] }}/consigli/nuovo" class="form-section ornato">
+        <label for="tipo">Tipo <span class="obbligatorio">*</span></label>
+        <select id="tipo" name="tipo" required style="width:100%; padding:0.75rem; margin-bottom:0.5rem;">
+            <option value="abilita">Abilità</option>
+            <option value="equipaggiamento">Equipaggiamento</option>
+            <option value="aspetti_leggendari">Aspetti leggendari</option>
+            <option value="tempra">Tempra</option>
+            <option value="paragon">Paragon e glifi</option>
+            <option value="generale">Generale</option>
+        </select>
+
+        <label for="contenuto">Contenuto del consiglio <span class="obbligatorio">*</span></label>
+        <textarea id="contenuto" name="contenuto" rows="3" required style="width:100%; padding:0.75rem; margin-bottom:0.5rem;"></textarea>
+
+        <label for="fonte">Fonte</label>
+        <input type="text" id="fonte" name="fonte" maxlength="200" style="width:100%; padding:0.75rem; margin-bottom:0.5rem;">
+
+        <label for="data_verifica">Data verifica</label>
+        <input type="text" id="data_verifica" name="data_verifica" placeholder="YYYY-MM-DD" style="width:100%; padding:0.75rem; margin-bottom:0.5rem;">
+
+        <label for="stato">Stato</label>
+        <select id="stato" name="stato" style="width:100%; padding:0.75rem; margin-bottom:0.5rem;">
+            <option value="da_verificare">Da verificare</option>
+            <option value="verificata">Verificata</option>
+            <option value="obsoleta">Obsoleta</option>
+        </select>
+
+        <button type="submit">Aggiungi consiglio</button>
+    </form>
+</section>
+
+{% if consigli %}
+<section id="elenco-consigli">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7l-8-4-8 4M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#d4af37" stroke-width="2"/></svg></span>Consigli per {{ personaggio['nome'] }}</h2>
+    <div class="grid consigli-grid">
+        {% for c in consigli %}
+        <article class="card">
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Tipo</span><span class="stat-value"><strong>{{ c['tipo'] }}</strong></span></div>
+                <div class="stat-row"><span class="stat-label">Contenuto</span><span class="stat-value">{{ c['contenuto'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ c['fonte'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Data verifica</span><span class="stat-value">{{ c['data_verifica'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Stato</span><span class="stat-value"><span class="badge badge-{{ c['stato'] }}">{{ c['stato'] }}</span></span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7l-8-4-8 4M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#d4af37" stroke-width="2"/></svg></span>Nessun consiglio salvato</h3>
+    <p>Aggiungine uno usando il modulo sopra.</p>
+</section>
+{% endif %}
+
+<p style="text-align: center;"><a href="/personaggi/{{ personaggio['id'] }}" class="btn-annulla" style="width:auto;">Torna al personaggio</a></p>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.tabella-analisi { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--bg-card); border: 3px solid var(--border-obsidian); border-radius: var(--radius-md); overflow: hidden; margin-bottom: 1.75rem; box-shadow: var(--shadow-lg); }
+.tabella-analisi th { background: linear-gradient(135deg, var(--bg-panel), #0d0d0d); color: var(--text-gold); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 2px; padding: 1rem; text-align: left; border-bottom: 3px solid var(--border-gold); font-weight: 800; }
+.tabella-analisi td { padding: 1rem; color: var(--text-main); border-bottom: 1px solid var(--border-subtle); font-size: 0.95rem; }
+.tabella-analisi tr:last-child td { border-bottom: none; }
+.tabella-analisi tr:hover { background: rgba(212, 175, 55, 0.06); border-left: 4px solid var(--accent-gold); }
+.consigli-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+</style>
+{% endblock %}

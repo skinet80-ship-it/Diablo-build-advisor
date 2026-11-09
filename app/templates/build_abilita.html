@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Abilità - {{ build_versione['nome_build'] }} - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section id="info-versione">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Versione build</h2>
+    <div class="grid versione-info-grid">
+        <div class="card">
+            <div class="label">Nome versione</div>
+            <div class="value"><strong>{{ build_versione['nome_build'] }}</strong></div>
+        </div>
+        <div class="card">
+            <div class="label">Stato</div>
+            <div class="value"><span class="badge badge-{{ build_versione['stato'] }}">{{ build_versione['stato'] }}</span></div>
+        </div>
+        <div class="card">
+            <div class="label">Stagione</div>
+            <div class="value">{{ build_versione['stagione_id'] or '—' }}</div>
+        </div>
+        <div class="card">
+            <div class="label">Patch</div>
+            <div class="value">{{ build_versione['patch_id'] or '—' }}</div>
+        </div>
+    </div>
+</section>
+
+<section id="albero-abilita">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Abilità associate</h2>
+
+    {% if abilita_list %}
+    <div class="abilita-albero">
+        {% for ab in abilita_list %}
+        <div class="abilita-nodo">
+            <div class="nodo-header">
+                <strong>{{ ab['abilita_nome'] }}</strong>
+                {% if ab['codice_identificativo'] %}<span class="codice">{{ ab['codice_identificativo'] }}</span>{% endif %}
+            </div>
+            <div class="nodo-body">
+                <div class="nodo-stat"><span class="label-small">Versione:</span> {{ ab['versione_descrizione'] or 'Senza descrizione' }}</div>
+                <div class="nodo-stat"><span class="label-small">Livello:</span> {{ ab['livello'] or '—' }}</div>
+                <div class="nodo-stat"><span class="label-small">Nota:</span> {{ ab['nota'] or '—' }}</div>
+                <div class="nodo-stat"><span class="label-small">Stato:</span> <span class="badge badge-{{ ab['versione_stato'] }}">{{ ab['versione_stato'] }}</span></div>
+            </div>
+            <div class="nodo-actions">
+                <form method="POST" action="/build_versioni_abilita/{{ ab['id'] }}/modifica" style="display:inline;" onsubmit="return confirm('Modificare questa abilità?');">
+                    <input type="number" name="livello" value="{{ ab['livello'] or 1 }}" min="1" style="width:4rem; padding:0.2rem; font-size:0.8rem;">
+                    <input type="text" name="nota" value="{{ ab['nota'] or '' }}" placeholder="nota" style="width:6rem; padding:0.2rem; font-size:0.8rem;">
+                    <button type="submit" class="btn-annulla secondary" style="font-size:0.75rem; padding:0.15rem 0.4rem;">Salva</button>
+                </form>
+                <form method="POST" action="/build_versioni_abilita/{{ ab['id'] }}/rimuovi" style="display:inline;" onsubmit="return confirm('Rimuovere questa abilità dalla versione?');">
+                    <button type="submit" class="btn-annulla danger" style="font-size:0.75rem; padding:0.15rem 0.4rem;">Rimuovi</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state" style="padding:1.5rem 1rem;">
+        <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna abilità associata</h3>
+        <p>Aggiungi la prima abilità usando il modulo qui sotto.</p>
+    </div>
+    {% endif %}
+</section>
+
+<section id="aggiungi-abilita">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/></svg></span>Aggiungi abilità</h2>
+    <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/abilita/aggiungi" class="form-section ornato">
+        <label for="abilita_id">Abilità <span class="obbligatorio">*</span></label>
+        <select name="abilita_id" id="abilita_select" required style="width:100%; padding:0.75rem; margin-bottom:0.5rem;" onchange="caricaVersioniAbilita(this, 'abilita_versioni_select')">
+            <option value="">-- Seleziona abilità --</option>
+            {% if build_versione['classe_id'] %}
+            {% for ab in abilita_per_classe.get(build_versione['classe_id'], []) %}
+            <option value="{{ ab['id'] }}">{{ ab['nome'] }} ({{ ab['codice_identificativo'] }})</option>
+            {% endfor %}
+            {% else %}
+            <option value="">-- Versione senza classe definita --</option>
+            {% endif %}
+        </select>
+
+        <label for="abilita_versioni_id">Versione storica <span class="obbligatorio">*</span></label>
+        <select name="abilita_versioni_id" id="abilita_versioni_select" required style="width:100%; padding:0.75rem; margin-bottom:0.5rem;">
+            <option value="">-- Prima seleziona un'abilità --</option>
+        </select>
+
+        <div class="form-grid">
+            <div class="form-col">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Livello</label>
+                <input type="number" name="livello" placeholder="Livello" min="1" value="1" style="padding:0.3rem;">
+            </div>
+            <div class="form-col">
+                <label style="font-size:0.8rem; color:var(--text-muted);">Nota</label>
+                <input type="text" name="nota" placeholder="Nota" style="padding:0.3rem;">
+            </div>
+        </div>
+
+        <button type="submit" class="btn-annulla secondary" style="font-size:0.75rem; margin-top:0.25rem;">Aggiungi abilità</button>
+        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem;">L'abilità deve appartenere alla stessa classe della build base. La versione storica determina il contesto temporale.</p>
+    </form>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.versione-info-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.abilita-albero { display: flex; flex-direction: column; gap: 0.75rem; }
+.abilita-nodo {
+    background: var(--bg-card);
+    border: 2px solid var(--border-obsidian);
+    border-radius: var(--radius-md);
+    padding: 1rem;
+    position: relative;
+    box-shadow: var(--shadow-md);
+    transition: all var(--transition);
+}
+.abilita-nodo:hover { border-color: var(--border-gold); transform: translateY(-2px); }
+.nodo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+.nodo-header strong { color: var(--text-gold); font-size: 1.1rem; }
+.codice { font-size: 0.7rem; color: var(--text-muted); background: var(--bg-input); padding: 0.1rem 0.4rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); }
+.nodo-body { margin-bottom: 0.75rem; }
+.nodo-stat { display: flex; justify-content: space-between; font-size: 0.85rem; padding: 0.2rem 0; border-bottom: 1px solid var(--border-subtle); }
+.label-small { color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.7rem; }
+.nodo-actions { display: flex; gap: 0.5rem; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function caricaVersioniAbilita(selectAbilita, idSelectVersioni) {
+    const abilitaId = selectAbilita.value;
+    const selectVersioni = document.getElementById(idSelectVersioni);
+    selectVersioni.innerHTML = '<option value="">-- Caricamento... --</option>';
+    if (!abilitaId) {
+        selectVersioni.innerHTML = '<option value="">-- Prima seleziona un'abilità --</option>';
+        return;
+    }
+    try {
+        const risposta = await fetch(`/api/abilita/${abilitaId}/versioni`);
+        const dati = await risposta.json();
+        if (dati.error) {
+            selectVersioni.innerHTML = '<option value="">-- Errore caricamento --</option>';
+            return;
+        }
+        selectVersioni.innerHTML = '<option value="">-- Seleziona versione --</option>';
+        for (const v of dati.versioni) {
+            const opt = document.createElement('option');
+            opt.value = v.id;
+            opt.textContent = `${v.descrizione || 'Senza descrizione'} [${v.tipo}, ${v.stato}]`;
+            selectVersioni.appendChild(opt);
+        }
+    } catch (e) {
+        selectVersioni.innerHTML = '<option value="">-- Errore di rete --</option>';
+    }
+}
+</script>
+{% endblock %}

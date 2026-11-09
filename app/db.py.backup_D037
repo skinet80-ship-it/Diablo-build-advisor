@@ -1,0 +1,831 @@
+import sqlite3
+import os
+
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "diablo.db")
+
+
+def get_conn():
+    """Apre una connessione al database SQLite con chiavi esterne attive."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def dict_from_row(row):
+    """Converte una riga SQLite in dizionario."""
+    if row is None:
+        return None
+    return {k: row[k] for k in row.keys()}
+
+
+def verifica_database():
+    """Restituisce la lista delle tabelle presenti nel database."""
+    conn = get_conn()
+    try:
+        cur = conn.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        return [r[0] for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def inizializza_database():
+    """Crea le tabelle necessarie se non esistono, inclusa la tabella personaggi."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS personaggi (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                classe TEXT NOT NULL,
+                modalita TEXT NOT NULL CHECK (modalita IN ('Eterno', 'Stagionale')),
+                numero_stagione INTEGER,
+                livello_personaggio INTEGER NOT NULL CHECK (livello_personaggio BETWEEN 1 AND 60),
+                livello_paragon INTEGER NOT NULL DEFAULT 0,
+                obiettivo TEXT,
+                note TEXT,
+                data_creazione TEXT NOT NULL,
+                data_modifica TEXT NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS schema_version (
+                id INTEGER PRIMARY KEY CHECK (id = 1),
+                versione INTEGER NOT NULL
+            )
+            """
+        )
+        cur.execute(
+            "INSERT OR IGNORE INTO schema_version (id, versione) VALUES (1, 1)"
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def crea_personaggio(
+    nome,
+    classe,
+    modalita,
+    numero_stagione=None,
+    livello_personaggio=1,
+    livello_paragon=0,
+    obiettivo=None,
+    note=None,
+):
+    """Crea un nuovo personaggio e restituisce il suo id."""
+    from datetime import datetime
+
+    adesso = datetime.now().isoformat()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO personaggi
+            (nome, classe, modalita, numero_stagione, livello_personaggio,
+             livello_paragon, obiettivo, note, data_creazione, data_modifica)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                nome,
+                classe,
+                modalita,
+                numero_stagione,
+                livello_personaggio,
+                livello_paragon,
+                obiettivo,
+                note,
+                adesso,
+                adesso,
+            ),
+        )
+        conn.commit()
+        return cur.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def leggi_personaggi():
+    """Restituisce tutti i personaggi ordinati per data di modifica decrescente."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, nome, classe, modalita, numero_stagione,
+                   livello_personaggio, livello_paragon, obiettivo, note,
+                   data_creazione, data_modifica
+            FROM personaggi
+            ORDER BY data_modifica DESC
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_personaggio_per_id(personaggio_id):
+    """Restituisce un personaggio per id, o None se non esiste."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, nome, classe, modalita, numero_stagione,
+                   livello_personaggio, livello_paragon, obiettivo, note,
+                   data_creazione, data_modifica
+            FROM personaggi
+            WHERE id = ?
+            """,
+            (personaggio_id,),
+        )
+        r = cur.fetchone()
+        return dict_from_row(r)
+    finally:
+        conn.close()
+
+
+def modifica_personaggio(
+    personaggio_id,
+    nome,
+    classe,
+    modalita,
+    numero_stagione=None,
+    livello_personaggio=1,
+    livello_paragon=0,
+    obiettivo=None,
+    note=None,
+):
+    """Modifica un personaggio esistente. Solleva ValueError se non esiste."""
+    from datetime import datetime
+
+    adesso = datetime.now().isoformat()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            UPDATE personaggi
+            SET nome = ?, classe = ?, modalita = ?, numero_stagione = ?,
+                livello_personaggio = ?, livello_paragon = ?,
+                obiettivo = ?, note = ?, data_modifica = ?
+            WHERE id = ?
+            """,
+            (
+                nome,
+                classe,
+                modalita,
+                numero_stagione,
+                livello_personaggio,
+                livello_paragon,
+                obiettivo,
+                note,
+                adesso,
+                personaggio_id,
+            ),
+        )
+        if cur.rowcount == 0:
+            raise ValueError(f"Personaggio con id {personaggio_id} non trovato.")
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def elimina_personaggio(personaggio_id):
+    """Elimina un personaggio. Solleva ValueError se non esiste."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM personaggi WHERE id = ?", (personaggio_id,))
+        if cur.rowcount == 0:
+            raise ValueError(f"Personaggio con id {personaggio_id} non trovato.")
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def inizializza_consigli_stagioni():
+    """Crea le tabelle per consigli build e stagioni se non esistono."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS consigli (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                personaggio_id INTEGER,
+                build_id INTEGER,
+                tipo TEXT NOT NULL CHECK (tipo IN ('abilita', 'equipaggiamento', 'aspetti_leggendari', 'tempra', 'paragon', 'generale')),
+                contenuto TEXT NOT NULL,
+                fonte TEXT,
+                data_verifica TEXT,
+                stato TEXT NOT NULL CHECK (stato IN ('verificata', 'da_verificare', 'obsoleta')),
+                data_creazione TEXT NOT NULL,
+                FOREIGN KEY (personaggio_id) REFERENCES personaggi(id) ON DELETE CASCADE,
+                FOREIGN KEY (build_id) REFERENCES build(id) ON DELETE CASCADE
+            )
+            """
+        )
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stagioni (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                numero INTEGER NOT NULL,
+                nome TEXT NOT NULL,
+                stato_attivo INTEGER NOT NULL DEFAULT 0,
+                meccaniche TEXT,
+                note TEXT,
+                fonte TEXT,
+                data_verifica TEXT,
+                stato TEXT NOT NULL CHECK (stato IN ('verificata', 'da_verificare', 'obsoleta'))
+            )
+            """
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def aggiungi_consiglio(personaggio_id, build_id, tipo, contenuto, fonte, data_verifica, stato):
+    """Aggiunge un consiglio per un personaggio o una build."""
+    from datetime import datetime
+    adesso = datetime.now().isoformat()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            INSERT INTO consigli
+            (personaggio_id, build_id, tipo, contenuto, fonte, data_verifica, stato, data_creazione)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (personaggio_id, build_id, tipo, contenuto, fonte, data_verifica, stato, adesso),
+        )
+        conn.commit()
+        return cur.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def leggi_consigli_personaggio(personaggio_id):
+    """Restituisce tutti i consigli di un personaggio."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, personaggio_id, build_id, tipo, contenuto, fonte, data_verifica, stato, data_creazione
+            FROM consigli
+            WHERE personaggio_id = ?
+            ORDER BY data_creazione DESC
+            """,
+            (personaggio_id,),
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_consigli_build(build_id):
+    """Restituisce tutti i consigli di una build."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, personaggio_id, build_id, tipo, contenuto, fonte, data_verifica, stato, data_creazione
+            FROM consigli
+            WHERE build_id = ?
+            ORDER BY data_creazione DESC
+            """,
+            (build_id,),
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def inizializza_stagioni():
+    """Crea la tabella stagioni se non esiste. Nessun dato di esempio inserito."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS stagioni (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                numero INTEGER NOT NULL,
+                nome TEXT NOT NULL,
+                stato_attivo INTEGER NOT NULL DEFAULT 0,
+                meccaniche TEXT,
+                note TEXT,
+                fonte TEXT,
+                data_verifica TEXT,
+                stato TEXT NOT NULL CHECK (stato IN ('verificata', 'da_verificare', 'obsoleta'))
+            )
+            """
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def leggi_build_attiva_personaggio(personaggio_id):
+    """Restituisce la build attiva di un personaggio, o None se non ce n'è una."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, personaggio_id, nome_build, obiettivo, abilita, equipaggiamento,
+                   aspetti_leggendari, tempra, paragon, note,
+                   build_attiva, data_creazione, data_modifica
+            FROM build
+            WHERE personaggio_id = ? AND build_attiva = 1
+            ORDER BY data_creazione DESC
+            LIMIT 1
+            """,
+            (personaggio_id,),
+        )
+        r = cur.fetchone()
+        return dict_from_row(r)
+    finally:
+        conn.close()
+
+
+def leggi_stagioni():
+    """Restituisce tutte le stagioni."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, numero, nome, stato_attivo, meccaniche, note, fonte, data_verifica, stato
+            FROM stagioni
+            ORDER BY numero DESC
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_stagione_attiva():
+    """Restituisce la stagione attiva, o None se non ce n'è una."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, numero, nome, stato_attivo, meccaniche, note, fonte, data_verifica, stato
+            FROM stagioni
+            WHERE stato_attivo = 1
+            LIMIT 1
+            """
+        )
+        r = cur.fetchone()
+        return dict_from_row(r)
+    finally:
+        conn.close()
+
+
+def inizializza_build():
+    """Crea la tabella build se non esiste."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS build (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                personaggio_id INTEGER NOT NULL,
+                nome_build TEXT NOT NULL,
+                obiettivo TEXT,
+                abilita TEXT,
+                equipaggiamento TEXT,
+                aspetti_leggendari TEXT,
+                tempra TEXT,
+                paragon TEXT,
+                note TEXT,
+                build_attiva INTEGER NOT NULL DEFAULT 0,
+                data_creazione TEXT NOT NULL,
+                data_modifica TEXT NOT NULL,
+                FOREIGN KEY (personaggio_id) REFERENCES personaggi(id) ON DELETE CASCADE
+            )
+            """
+        )
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def crea_build(
+    personaggio_id,
+    nome_build,
+    obiettivo=None,
+    abilita=None,
+    equipaggiamento=None,
+    aspetti_leggendari=None,
+    tempra=None,
+    paragon=None,
+    note=None,
+    build_attiva=False,
+):
+    """Crea una nuova build per un personaggio. Se build_attiva=True, disattiva le altre build dello stesso personaggio."""
+    from datetime import datetime
+
+    adesso = datetime.now().isoformat()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        # Se la nuova build è attiva, disattiva le altre dello stesso personaggio
+        if build_attiva:
+            cur.execute(
+                "UPDATE build SET build_attiva = 0 WHERE personaggio_id = ?",
+                (personaggio_id,),
+            )
+        cur.execute(
+            """
+            INSERT INTO build
+            (personaggio_id, nome_build, obiettivo, abilita, equipaggiamento,
+             aspetti_leggendari, tempra, paragon, note, build_attiva,
+             data_creazione, data_modifica)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                personaggio_id,
+                nome_build,
+                obiettivo,
+                abilita,
+                equipaggiamento,
+                aspetti_leggendari,
+                tempra,
+                paragon,
+                note,
+                1 if build_attiva else 0,
+                adesso,
+                adesso,
+            ),
+        )
+        conn.commit()
+        return cur.lastrowid
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def leggi_build_personaggio(personaggio_id):
+    """Restituisce tutte le build di un personaggio, con quella attiva per prima."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, personaggio_id, nome_build, obiettivo, abilita, equipaggiamento,
+                   aspetti_leggendari, tempra, paragon, note,
+                   build_attiva, data_creazione, data_modifica
+            FROM build
+            WHERE personaggio_id = ?
+            ORDER BY build_attiva DESC, data_creazione DESC
+            """,
+            (personaggio_id,),
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_build_per_id(build_id):
+    """Restituisce una build per id, o None se non esiste."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, personaggio_id, nome_build, obiettivo, abilita, equipaggiamento,
+                   aspetti_leggendari, tempra, paragon, note,
+                   build_attiva, data_creazione, data_modifica
+            FROM build
+            WHERE id = ?
+            """,
+            (build_id,),
+        )
+        r = cur.fetchone()
+        return dict_from_row(r)
+    finally:
+        conn.close()
+
+
+def modifica_build(
+    build_id,
+    nome_build,
+    obiettivo=None,
+    abilita=None,
+    equipaggiamento=None,
+    aspetti_leggendari=None,
+    tempra=None,
+    paragon=None,
+    note=None,
+    build_attiva=False,
+):
+    """Modifica una build esistente. Se build_attiva=True, disattiva le altre build dello stesso personaggio."""
+    from datetime import datetime
+
+    adesso = datetime.now().isoformat()
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        # Recupera il personaggio_id della build
+        cur.execute("SELECT personaggio_id FROM build WHERE id = ?", (build_id,))
+        r = cur.fetchone()
+        if r is None:
+            raise ValueError(f"Build con id {build_id} non trovata.")
+        personaggio_id = r[0]
+
+        # Se attiva, disattiva le altre
+        if build_attiva:
+            cur.execute(
+                "UPDATE build SET build_attiva = 0 WHERE personaggio_id = ? AND id != ?",
+                (personaggio_id, build_id),
+            )
+
+        cur.execute(
+            """
+            UPDATE build
+            SET nome_build = ?, obiettivo = ?, abilita = ?, equipaggiamento = ?,
+                aspetti_leggendari = ?, tempra = ?, paragon = ?, note = ?,
+                build_attiva = ?, data_modifica = ?
+            WHERE id = ?
+            """,
+            (
+                nome_build,
+                obiettivo,
+                abilita,
+                equipaggiamento,
+                aspetti_leggendari,
+                tempra,
+                paragon,
+                note,
+                1 if build_attiva else 0,
+                adesso,
+                build_id,
+            ),
+        )
+        if cur.rowcount == 0:
+            raise ValueError(f"Build con id {build_id} non trovata.")
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def elimina_build(build_id):
+    """Elimina una build. Solleva ValueError se non esiste."""
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM build WHERE id = ?", (build_id,))
+        if cur.rowcount == 0:
+            raise ValueError(f"Build con id {build_id} non trovata.")
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def inizializza_catalogo():
+    """Crea le tabelle del catalogo Diablo 4 se non esistono.
+    Nessun dato di gioco viene inserito automaticamente.
+    """
+    conn = get_conn()
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS classi (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                slug TEXT NOT NULL UNIQUE,
+                fonte TEXT
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS patch (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                versione TEXT NOT NULL UNIQUE,
+                data_rilascio TEXT,
+                fonte TEXT,
+                note TEXT,
+                stato TEXT NOT NULL CHECK (stato IN ('verificata', 'da_verificare', 'obsoleta'))
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS fonte_informativa (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                url TEXT,
+                tipologia TEXT NOT NULL CHECK (tipologia IN ('ufficiale', 'community')),
+                affidabilita TEXT,
+                note TEXT
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS slot_equipaggiamento (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                codice_slot TEXT NOT NULL UNIQUE
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS abilita (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                classe_id INTEGER NOT NULL,
+                nome TEXT NOT NULL,
+                codice_identificativo TEXT NOT NULL UNIQUE,
+                FOREIGN KEY (classe_id) REFERENCES classi(id) ON DELETE CASCADE
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE TABLE IF NOT EXISTS abilita_versioni (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                abilita_id INTEGER NOT NULL,
+                patch_id INTEGER,
+                stagione_id INTEGER,
+                tipo TEXT NOT NULL CHECK (tipo IN ('attiva', 'passiva', 'definitiva')),
+                descrizione TEXT,
+                livello_sblocco INTEGER,
+                fonte_id INTEGER,
+                data_verifica TEXT,
+                stato TEXT NOT NULL CHECK (stato IN ('verificata', 'da_verificare', 'obsoleta')),
+                FOREIGN KEY (abilita_id) REFERENCES abilita(id) ON DELETE CASCADE,
+                FOREIGN KEY (patch_id) REFERENCES patch(id),
+                FOREIGN KEY (stagione_id) REFERENCES stagioni(id),
+                FOREIGN KEY (fonte_id) REFERENCES fonte_informativa(id)
+            )
+            """
+        )
+
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_abilita_classe ON abilita(classe_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_abilita_versioni_abilita ON abilita_versioni(abilita_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_abilita_versioni_patch ON abilita_versioni(patch_id)
+            """
+        )
+        cur.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_abilita_versioni_stagione ON abilita_versioni(stagione_id)
+            """
+        )
+
+        conn.commit()
+        return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def leggi_classi():
+    """Restituisce tutte le classi ordinate per nome."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, nome, slug, fonte
+            FROM classi
+            ORDER BY nome
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_abilita_per_classe(classe_id):
+    """Restituisce tutte le abilità di una classe con l'ultima versione nota."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT a.id, a.nome, a.codice_identificativo,
+                   v.tipo, v.descrizione, v.livello_sblocco,
+                   v.stato, v.data_verifica, p.versione AS patch_versione
+            FROM abilita a
+            LEFT JOIN abilita_versioni v ON v.abilita_id = a.id
+            LEFT JOIN patch p ON v.patch_id = p.id
+            WHERE a.classe_id = ?
+            ORDER BY a.nome, v.data_verifica DESC
+            """
+            , (classe_id,)
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_patch():
+    """Restituisce tutte le patch ordinate per versione decrescente."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, versione, data_rilascio, fonte, note, stato
+            FROM patch
+            ORDER BY versione DESC
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_fonti():
+    """Restituisce tutte le fonti informative."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, nome, url, tipologia, affidabilita, note
+            FROM fonte_informativa
+            ORDER BY nome
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()
+
+
+def leggi_slot_equipaggiamento():
+    """Restituisce tutti gli slot di equipaggiamento."""
+    conn = get_conn()
+    try:
+        cur = conn.execute(
+            """
+            SELECT id, nome, codice_slot
+            FROM slot_equipaggiamento
+            ORDER BY nome
+            """
+        )
+        return [dict_from_row(r) for r in cur.fetchall()]
+    finally:
+        conn.close()

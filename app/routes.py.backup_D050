@@ -1,0 +1,256 @@
+from flask import Blueprint, render_template, request, redirect, url_for, flash
+
+from app import db
+
+bp = Blueprint("main", __name__)
+
+
+@bp.route("/")
+def index():
+    """Pagina iniziale dell'applicazione con dashboard."""
+    db.inizializza_database()
+    db.inizializza_stagioni()
+    personaggi = db.leggi_personaggi()
+    stagione_attiva = db.leggi_stagione_attiva()
+    return render_template("index.html", personaggi=personaggi, stagione_attiva=stagione_attiva)
+
+
+@bp.route("/personaggi")
+def personaggi():
+    """Elenco personaggi e form per crearne uno nuovo."""
+    db.inizializza_database()
+    personaggi = db.leggi_personaggi()
+    return render_template("personaggi.html", personaggi=personaggi)
+
+
+@bp.route("/personaggi/nuovo", methods=["POST"])
+def nuovo_personaggio():
+    """Crea un nuovo personaggio."""
+    try:
+        db.crea_personaggio(
+            nome=request.form.get("nome", "").strip(),
+            classe=request.form.get("classe", "").strip(),
+            modalita=request.form.get("modalita", "").strip(),
+            numero_stagione=request.form.get("numero_stagione") or None,
+            livello_personaggio=int(request.form.get("livello_personaggio", 1)),
+            livello_paragon=int(request.form.get("livello_paragon", 0)),
+            obiettivo=request.form.get("obiettivo", "").strip() or None,
+            note=request.form.get("note", "").strip() or None,
+        )
+        flash("Personaggio creato con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante la creazione: {e}", "errore")
+    return redirect(url_for("main.personaggi"))
+
+
+@bp.route("/personaggi/<int:personaggio_id>/modifica", methods=["POST"])
+def modifica_personaggio(personaggio_id):
+    """Modifica un personaggio esistente."""
+    try:
+        db.modifica_personaggio(
+            personaggio_id,
+            nome=request.form.get("nome", "").strip(),
+            classe=request.form.get("classe", "").strip(),
+            modalita=request.form.get("modalita", "").strip(),
+            numero_stagione=request.form.get("numero_stagione") or None,
+            livello_personaggio=int(request.form.get("livello_personaggio", 1)),
+            livello_paragon=int(request.form.get("livello_paragon", 0)),
+            obiettivo=request.form.get("obiettivo", "").strip() or None,
+            note=request.form.get("note", "").strip() or None,
+        )
+        flash("Personaggio aggiornato con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante la modifica: {e}", "errore")
+    return redirect(url_for("main.personaggi"))
+
+
+@bp.route("/personaggi/<int:personaggio_id>/elimina", methods=["POST"])
+def elimina_personaggio(personaggio_id):
+    """Elimina un personaggio."""
+    try:
+        db.elimina_personaggio(personaggio_id)
+        flash("Personaggio eliminato con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante l'eliminazione: {e}", "errore")
+    return redirect(url_for("main.personaggi"))
+
+
+@bp.route("/personaggi/<int:personaggio_id>/build")
+def lista_build(personaggio_id):
+    """Elenco build di un personaggio."""
+    db.inizializza_build()
+    personaggio = db.leggi_personaggio_per_id(personaggio_id)
+    if personaggio is None:
+        flash("Personaggio non trovato.", "errore")
+        return redirect(url_for("main.personaggi"))
+    build_list = db.leggi_build_personaggio(personaggio_id)
+    return render_template("build.html", personaggio=personaggio, build_list=build_list)
+
+
+@bp.route("/personaggi/<int:personaggio_id>/build/nuovo", methods=["POST"])
+def nuovo_build(personaggio_id):
+    """Crea una nuova build per un personaggio."""
+    try:
+        db.crea_build(
+            personaggio_id=personaggio_id,
+            nome_build=request.form.get("nome_build", "").strip(),
+            obiettivo=request.form.get("obiettivo", "").strip() or None,
+            abilita=request.form.get("abilita", "").strip() or None,
+            equipaggiamento=request.form.get("equipaggiamento", "").strip() or None,
+            aspetti_leggendari=request.form.get("aspetti_leggendari", "").strip() or None,
+            tempra=request.form.get("tempra", "").strip() or None,
+            paragon=request.form.get("paragon", "").strip() or None,
+            note=request.form.get("note", "").strip() or None,
+            build_attiva=request.form.get("build_attiva") == "1",
+        )
+        flash("Build creata con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante la creazione: {e}", "errore")
+    return redirect(url_for("main.lista_build", personaggio_id=personaggio_id))
+
+
+@bp.route("/build/<int:build_id>/modifica", methods=["POST"])
+def modifica_build(build_id):
+    """Modifica una build esistente."""
+    try:
+        db.modifica_build(
+            build_id,
+            nome_build=request.form.get("nome_build", "").strip(),
+            obiettivo=request.form.get("obiettivo", "").strip() or None,
+            abilita=request.form.get("abilita", "").strip() or None,
+            equipaggiamento=request.form.get("equipaggiamento", "").strip() or None,
+            aspetti_leggendari=request.form.get("aspetti_leggendari", "").strip() or None,
+            tempra=request.form.get("tempra", "").strip() or None,
+            paragon=request.form.get("paragon", "").strip() or None,
+            note=request.form.get("note", "").strip() or None,
+            build_attiva=request.form.get("build_attiva") == "1",
+        )
+        flash("Build aggiornata con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante la modifica: {e}", "errore")
+    build = db.leggi_build_per_id(build_id)
+    return redirect(url_for("main.lista_build", personaggio_id=build["personaggio_id"]))
+
+
+@bp.route("/build/<int:build_id>/elimina", methods=["POST"])
+def elimina_build_route(build_id):
+    """Elimina una build."""
+    try:
+        build = db.leggi_build_per_id(build_id)
+        if build is None:
+            raise ValueError("Build non trovata.")
+        personaggio_id = build["personaggio_id"]
+        db.elimina_build(build_id)
+        flash("Build eliminata con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante l'eliminazione: {e}", "errore")
+        if build:
+            return redirect(url_for("main.lista_build", personaggio_id=build["personaggio_id"]))
+        return redirect(url_for("main.personaggi"))
+    return redirect(url_for("main.lista_build", personaggio_id=build["personaggio_id"]))
+
+
+@bp.route("/confronto")
+def confronto():
+    """Confronto build (in sviluppo)."""
+    return render_template("confronto.html", sviluppo=True)
+
+
+@bp.route("/stagioni")
+def stagioni():
+    """Elenco stagioni con meccaniche e fonti."""
+    db.inizializza_stagioni()
+    stagione_attiva = db.leggi_stagione_attiva()
+    stagione_list = db.leggi_stagioni()
+    return render_template("stagioni.html", stagione_attiva=stagione_attiva, stagione_list=stagione_list)
+
+
+@bp.route("/fonti")
+def fonti():
+    """Elenco fonti e informazioni di verifica."""
+    return render_template("fonti.html", sviluppo=True)
+
+
+@bp.route("/catalogo")
+def catalogo():
+    """Catalogo Diablo 4: classi, abilità, patch, fonti e slot equipaggiamento."""
+    db.inizializza_catalogo()
+    classi = db.leggi_classi()
+    patch_list = db.leggi_patch()
+    fonti = db.leggi_fonti()
+    slot_list = db.leggi_slot_equipaggiamento()
+    return render_template(
+        "catalogo.html",
+        classi=classi,
+        patch_list=patch_list,
+        fonti=fonti,
+        slot_list=slot_list,
+    )
+
+
+@bp.route("/personaggi/<int:personaggio_id>/consigli")
+def consigli_personaggio(personaggio_id):
+    """Mostra i consigli per un personaggio, analizzando la build attiva."""
+    personaggio = db.leggi_personaggio_per_id(personaggio_id)
+    if personaggio is None:
+        flash("Personaggio non trovato.", "errore")
+        return redirect(url_for("main.personaggi"))
+    consigli = db.leggi_consigli_personaggio(personaggio_id)
+    build_attiva = db.leggi_build_attiva_personaggio(personaggio_id)
+
+    # Analisi dei dati mancanti nella build attiva
+    dati_mancanti = []
+    if build_attiva:
+        if not build_attiva.get("abilita"):
+            dati_mancanti.append("Abilità")
+        if not build_attiva.get("equipaggiamento"):
+            dati_mancanti.append("Equipaggiamento")
+        if not build_attiva.get("aspetti_leggendari"):
+            dati_mancanti.append("Aspetti leggendari")
+        if not build_attiva.get("tempra"):
+            dati_mancanti.append("Tempra")
+        if not build_attiva.get("paragon"):
+            dati_mancanti.append("Paragon e glifi")
+    else:
+        dati_mancanti.append("Nessuna build attiva definita")
+
+    return render_template(
+        "consigli.html",
+        personaggio=personaggio,
+        consigli=consigli,
+        build_attiva=build_attiva,
+        dati_mancanti=dati_mancanti,
+    )
+
+
+@bp.route("/personaggi/<int:personaggio_id>/consigli/nuovo", methods=["POST"])
+def nuovo_consiglio(personaggio_id):
+    """Aggiunge un consiglio per un personaggio."""
+    try:
+        db.aggiungi_consiglio(
+            personaggio_id=personaggio_id,
+            build_id=None,
+            tipo=request.form.get("tipo", "").strip(),
+            contenuto=request.form.get("contenuto", "").strip(),
+            fonte=request.form.get("fonte", "").strip() or None,
+            data_verifica=request.form.get("data_verifica", "").strip() or None,
+            stato=request.form.get("stato", "da_verificare").strip(),
+        )
+        flash("Consiglio aggiunto con successo.", "successo")
+    except ValueError as e:
+        flash(str(e), "errore")
+    except Exception as e:
+        flash(f"Errore durante l'aggiunta: {e}", "errore")
+    return redirect(url_for("main.consigli_personaggio", personaggio_id=personaggio_id))

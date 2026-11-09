@@ -1,0 +1,31 @@
+<svg width="200" height="120" viewBox="0 0 200 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ornGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#d4af37;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#8b6b2f;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#d4af37;stop-opacity:1"/>
+    </linearGradient>
+    <filter id="ornGlow">
+      <feGaussianBlur stdDeviation="2" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Arco gotico centrale -->
+  <path d="M 20 100 Q 20 20 100 20 Q 180 20 180 100 L 180 110 Q 180 120 100 120 Q 20 120 20 110 Z" fill="#1a1a1a" stroke="url(#ornGrad)" stroke-width="3"/>
+  <path d="M 40 95 Q 40 35 100 35 Q 160 35 160 95 L 160 105 Q 160 115 100 115 Q 40 115 40 105 Z" fill="none" stroke="#4d0e0e" stroke-width="2"/>
+  
+  <!-- Croce stilizzata -->
+  <path d="M 95 25 L 95 55 L 105 55 L 105 25" fill="url(#ornGrad)"/>
+  <path d="M 85 40 L 100 40 L 100 50 L 115 50 L 115 40 L 130 40" fill="url(#ornGrad)"/>
+  
+  <!-- Punte laterali -->
+  <path d="M 10 100 L 30 70 L 50 100" fill="none" stroke="url(#ornGrad)" stroke-width="3"/>
+  <path d="M 190 100 L 170 70 L 150 100" fill="none" stroke="url(#ornGrad)" stroke-width="3"/>
+  
+  <!-- Rune decorative -->
+  <circle cx="40" cy="40" r="6" fill="none" stroke="#d4af37" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="160" cy="40" r="6" fill="none" stroke="#d4af37" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="40" cy="80" r="4" fill="#d4af37" opacity="0.4"/>
+  <circle cx="160" cy="80" r="4" fill="#d4af37" opacity="0.4"/>
+</svg>

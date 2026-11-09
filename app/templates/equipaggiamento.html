@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Equipaggiamento - {{ build_versione['nome_build'] }} - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section id="info-versione" class="card">
+    <h2><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Equipaggiamento - {{ build_versione['nome_build'] }}</h2>
+    <p>Stato: <span class="badge badge-{{ build_versione['stato'] }}">{{ build_versione['stato'] }}</span></p>
+    <p style="font-size: 0.85rem; color: var(--text-muted);">
+        Gestione equipaggiamento per la versione build. Gli slot sono inizializzati automaticamente dal catalogo.
+    </p>
+    <p style="text-align: right; margin-top: 0.5rem;">
+        <a href="{{ url_for('main.lista_build', personaggio_id=personaggio_id) }}" class="btn-annulla secondary">Torna alla build</a>
+    </p>
+</section>
+
+{% if slot_list %}
+<section id="slot-list">
+    <h3><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Inventario equipaggiamento</h3>
+    <div class="grid inventario-grid">
+        {% for slot in slot_list %}
+        <article class="card slot-card">
+            <div class="slot-frame">
+                <div class="slot-svg">
+                    <svg width="80" height="80" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="10" y="10" width="60" height="60" rx="8" ry="8" fill="#1a1a1a" stroke="#d4af37" stroke-width="2"/>
+                        <line x1="40" y1="10" x2="40" y2="70" stroke="#d4af37" stroke-width="1" opacity="0.3"/>
+                        <line x1="10" y1="40" x2="70" y2="40" stroke="#d4af37" stroke-width="1" opacity="0.3"/>
+                        <text x="40" y="55" text-anchor="middle" font-family="Georgia" font-size="10" fill="#9a8c78">{{ slot['slot_nome'] }}</text>
+                    </svg>
+                </div>
+                <div class="slot-header">
+                    <span class="slot-title">{{ slot['slot_nome'] }}</span>
+                    <span class="badge badge-{{ 'badge-verificata' if slot['stato_slot'] == 'verificato' else 'badge-da-verificare' }}">{{ slot['stato_slot'] }}</span>
+                </div>
+                <div class="slot-body">
+                    <div class="stat-row"><span class="stat-label">Codice</span><span class="stat-value">{{ slot['codice_slot'] }}</span></div>
+                    {% if slot['oggetto_id'] %}
+                    <div class="stat-row oggetto-associato">
+                        <span class="stat-label">Oggetto</span>
+                        <span class="stat-value"><strong>{{ slot['nome_oggetto'] }}</strong>{% if slot['tipo_oggetto'] %} <span class="tipo-oggetto">{{ slot['tipo_oggetto'] }}</span>{% endif %}{% if slot['livello_oggetto'] %} <span class="livello-oggetto">Lvl {{ slot['livello_oggetto'] }}</span>{% endif %}</span>
+                    </div>
+                    <div class="slot-icon-oggetto">
+                        <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="8" width="44" height="44" rx="6" ry="6" fill="#d4af37" stroke="#8b6b2f" stroke-width="2"/>
+                            <path d="M30 20 L36 34 L24 34 Z" fill="#8b1a1a"/>
+                            <circle cx="30" cy="30" r="3" fill="#d4af37"/>
+                        </svg>
+                    </div>
+                    <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/{{ slot['associazione_id'] }}/rimuovi" style="display:inline; margin-top: 0.5rem;" onsubmit="return confirm('Rimuovere l'oggetto da questo slot? I dettagli collegati rimarranno orfani se non vengono eliminati prima.');">
+                        <button type="submit" class="btn-annulla danger">Rimuovi oggetto</button>
+                    </form>
+                    {% else %}
+                    <div class="stat-row vuoto">
+                        <span class="stat-label">Oggetto</span>
+                        <span class="stat-value vuoto" style="color:var(--text-muted); font-style:italic;">Svuoto</span>
+                    </div>
+                    <div class="slot-icon-vuoto">
+                        <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="8" y="8" width="44" height="44" rx="6" ry="6" fill="#1a1a1a" stroke="#5c4a2a" stroke-width="2" stroke-dasharray="4,4"/>
+                            <text x="30" y="34" text-anchor="middle" font-family="Georgia" font-size="10" fill="#6b6055">—</text>
+                        </svg>
+                    </div>
+                    <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/associa" style="margin-top:0.5rem;">
+                        <input type="hidden" name="slot_id" value="{{ slot['slot_id'] }}">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Oggetto <span class="obbligatorio">*</span></label>
+                        <select name="oggetto_id" required style="width:100%; padding:0.3rem; margin-bottom:0.25rem; font-size:0.85rem;">
+                            <option value="">-- Seleziona oggetto --</option>
+                            {% for o in oggetti %}
+                            <option value="{{ o['id'] }}">{{ o['nome_oggetto'] }}{% if o['tipo_oggetto'] %} ({{ o['tipo_oggetto'] }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Stato slot <span class="obbligatorio">*</span></label>
+                        <select name="stato_slot" required style="width:100%; padding:0.3rem; margin-bottom:0.25rem; font-size:0.85rem;">
+                            <option value="verificato">Verificato</option>
+                            <option value="mancante">Mancante</option>
+                            <option value="non_applicabile">Non applicabile</option>
+                        </select>
+                        <button type="submit" class="btn-annulla secondary">Associa oggetto</button>
+                        {% if not oggetti %}
+                        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem;">Il catalogo oggetti è vuoto.</p>
+                        {% endif %}
+                    </form>
+                    {% endif %}
+
+                    {% if slot['aspetti'] or slot['affissi'] or slot['tempra'] %}
+                    <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.85rem;">
+                        <div class="label" style="margin-bottom: 0.25rem;">Dettagli</div>
+                        {% for a in slot['aspetti'] %}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid var(--border-subtle);">
+                            <span><strong>Aspetto:</strong> {{ a['nome_aspetto'] }}{% if a['tipo_aspetto'] %} ({{ a['tipo_aspetto'] }}){% endif %}</span>
+                            <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/{{ slot['associazione_id'] }}/dettaglio/{{ a['id'] }}/rimuovi/aspetto" style="display:inline;" onsubmit="return confirm('Rimuovere questo aspetto?');">
+                                <button type="submit" class="btn-annulla danger" style="font-size:0.7rem; padding:0.15rem 0.4rem;">Rimuovi</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        {% for f in slot['affissi'] %}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid var(--border-subtle);">
+                            <span><strong>Affisso:</strong> {{ f['nome_affisso'] }} = {{ f['valore_affisso'] or '-' }}{% if f['livello_affisso'] %} (Lvl {{ f['livello_affisso'] }}){% endif %}</span>
+                            <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/{{ slot['associazione_id'] }}/dettaglio/{{ f['id'] }}/rimuovi/affisso" style="display:inline;" onsubmit="return confirm('Rimuovere questo affisso?');">
+                                <button type="submit" class="btn-annulla danger" style="font-size:0.7rem; padding:0.15rem 0.4rem;">Rimuovi</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                        {% for t in slot['tempra'] %}
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:0.25rem 0; border-bottom:1px solid var(--border-subtle);">
+                            <span><strong>Tempra:</strong> {{ t['tipo_tempra'] }}{% if t['livello_tempra'] %} (Lvl {{ t['livello_tempra'] }}){% endif %}</span>
+                            <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/{{ slot['associazione_id'] }}/dettaglio/{{ t['id'] }}/rimuovi/tempra" style="display:inline;" onsubmit="return confirm('Rimuovere questa tempra?');">
+                                <button type="submit" class="btn-annulla danger" style="font-size:0.7rem; padding:0.15rem 0.4rem;">Rimuovi</button>
+                            </form>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if slot['oggetto_id'] %}
+                    <form method="POST" action="/build_versioni/{{ build_versione['id'] }}/equipaggiamento/{{ slot['associazione_id'] }}/dettaglio" style="margin-top:0.5rem;">
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-bottom:0.25rem;">Aggiungi dettaglio</label>
+                        <select name="tipo_dettaglio" required style="width:100%; padding:0.3rem; margin-bottom:0.25rem; font-size:0.85rem;">
+                            <option value="">-- Seleziona tipo --</option>
+                            <option value="aspetto">Aspetto</option>
+                            <option value="affisso">Affisso</option>
+                            <option value="tempra">Tempra</option>
+                        </select>
+                        <div id="dettaglio-aspetto-{{ slot['associazione_id'] }}" style="display:none; margin-top:0.25rem;">
+                            <input type="text" name="nome_aspetto" placeholder="Nome aspetto" style="width:48%; padding:0.3rem; margin-right:0.5rem; font-size:0.85rem;">
+                            <input type="text" name="tipo_aspetto" placeholder="Tipo" style="width:48%; padding:0.3rem; font-size:0.85rem;">
+                        </div>
+                        <div id="dettaglio-affisso-{{ slot['associazione_id'] }}" style="display:none; margin-top:0.25rem;">
+                            <input type="text" name="nome_affisso" placeholder="Nome affisso" style="width:48%; padding:0.3rem; margin-right:0.5rem; font-size:0.85rem;">
+                            <input type="text" name="valore_affisso" placeholder="Valore" style="width:48%; padding:0.3rem; font-size:0.85rem;">
+                        </div>
+                        <div id="dettaglio-tempra-{{ slot['associazione_id'] }}" style="display:none; margin-top:0.25rem;">
+                            <input type="text" name="tipo_tempra" placeholder="Tipo tempra" style="width:48%; padding:0.3rem; margin-right:0.5rem; font-size:0.85rem;">
+                            <input type="number" name="livello_tempra" placeholder="Livello" style="width:48%; padding:0.3rem; font-size:0.85rem;">
+                        </div>
+                        <label style="font-size:0.8rem; color:var(--text-muted); display:block; margin-top:0.25rem; margin-bottom:0.1rem;">
+                            <input type="checkbox" name="verificato" value="1"> Verificato
+                        </label>
+                        <button type="submit" class="btn-annulla secondary">Aggiungi dettaglio</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if not oggetti %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Catalogo oggetti vuoto</h3>
+    <p>Non ci sono oggetti nel catalogo. Inserisci oggetti nella sezione Catalogo prima di poterli associare agli slot.</p>
+    <a href="/catalogo" class="btn-annulla">Vai al Catalogo</a>
+</section>
+{% endif %}
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuno slot configurato</h3>
+    <p>Non ci sono slot equipaggiamento nel catalogo. Non è possibile gestire l'equipaggiamento.</p>
+</section>
+{% endif %}
+
+{% block extra_js %}
+<script>
+function mostraCampiDettaglio(select, slotId) {
+    const tipo = select.value;
+    ['aspetto', 'affisso', 'tempra'].forEach(t => {
+        const div = document.getElementById('dettaglio-' + t + '-' + slotId);
+        if (div) div.style.display = (t === tipo) ? 'block' : 'none';
+    });
+}
+document.querySelectorAll('select[name="tipo_dettaglio"]').forEach(select => {
+    const slotId = select.closest('form').action.match(/(\d+)\/dettaglio$/)[1];
+    mostraCampiDettaglio(select, slotId);
+    select.addEventListener('change', () => mostraCampiDettaglio(select, slotId));
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.inventario-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.slot-frame { text-align: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1rem; }
+.slot-svg { margin: 0 auto 0.75rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+.slot-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-subtle); }
+.slot-title { font-size: 1.1rem; color: var(--text-gold); font-weight: 700; }
+.slot-body { display: flex; flex-direction: column; gap: 0.5rem; }
+.slot-icon-oggetto { margin: 0.75rem auto; filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.3)); }
+.slot-icon-vuoto { margin: 0.75rem auto; opacity: 0.5; }
+.tipo-oggetto { color: var(--text-bronze); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.livello-oggetto { color: var(--accent-gold); font-weight: 700; font-size: 0.85rem; }
+.stat-row.vuoto .stat-value { color: var(--text-muted); font-style: italic; }
+</style>
+{% endblock %}

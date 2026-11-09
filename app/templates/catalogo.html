@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Catalogo - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section id="catalogo-hero">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Catalogo Diablo IV</h2>
+    <p>Catalogo di classi, abilità, equipaggiamento, aspetti leggendari, tempra e Paragon.<br>
+    Ogni elemento del catalogo riporta fonte, data di verifica e stato (verificata / da verificare / obsoleta).</p>
+</section>
+
+{% if classi %}
+<section>
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Classi</h2>
+    <div class="grid classi-grid">
+        {% for c in classi %}
+        <article class="card classe-card">
+            <div class="card-header">
+                <span class="class-icon">{{ classe_icona(c['nome']) }}</span>
+                <span class="card-title">{{ c['nome'] }}</span>
+            </div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Slug</span><span class="stat-value">{{ c['slug'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ c['fonte'] or '-' }}</span></div>
+            </div>
+            <div class="card-actions">
+                <a href="/catalogo/abilita" class="btn-annulla secondary">Vedi abilità</a>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna classe definita</h3>
+    <p>Il catalogo classi è vuoto. I dati verranno inseriti manualmente con fonte e stato di verifica.</p>
+</section>
+{% endif %}
+
+{% if patch_list %}
+<section>
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-0.7 0.7L15 6.3M19 4l-2 2M7 21l-2-2M7.7 7.7a6 6 0 000 6l1.6 1.6M12 12l3 3M6.3 17.4l-1.6-1.6a4 4 0 010-5.6l3.77-3.77a4 4 0 010 5.6l1.6 1.6" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Patch</h2>
+    <div class="grid">
+        {% for p in patch_list %}
+        <article class="card">
+            <div class="card-header"><span class="card-title">{{ p['versione'] }}</span></div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Stato</span><span class="stat-value"><span class="badge badge-{{ p['stato'] }}">{{ p['stato'] }}</span></span></div>
+                <div class="stat-row"><span class="stat-label">Fonte</span><span class="stat-value">{{ p['fonte'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Data rilascio</span><span class="stat-value">{{ p['data_rilascio'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Note</span><span class="stat-value">{{ p['note'] or '-' }}</span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-0.7 0.7L15 6.3M19 4l-2 2M7 21l-2-2M7.7 7.7a6 6 0 000 6l1.6 1.6M12 12l3 3M6.3 17.4l-1.6-1.6a4 4 0 010-5.6l3.77-3.77a4 4 0 010 5.6l1.6 1.6" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna patch definita</h3>
+    <p>Nessuna patch è stata ancora inserita nel catalogo.</p>
+</section>
+{% endif %}
+
+{% if fonti %}
+<section>
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Fonti informative</h2>
+    <div class="grid">
+        {% for f in fonti %}
+        <article class="card">
+            <div class="card-header"><span class="card-title">{{ f['nome'] }}</span></div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Tipologia</span><span class="stat-value"><span class="badge badge-{{ 'badge-verificata' if f['tipologia']=='ufficiale' else 'badge-da-verificare' }}">{{ f['tipologia'] }}</span></span></div>
+                <div class="stat-row"><span class="stat-label">Affidabilità</span><span class="stat-value">{{ f['affidabilita'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">URL</span><span class="stat-value">{{ f['url'] or '-' }}</span></div>
+                <div class="stat-row"><span class="stat-label">Note</span><span class="stat-value">{{ f['note'] or '-' }}</span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 3h-6l4 4v0a4 4 0 014 4v14a3 3 0 00-3-3V7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuna fonte definita</h3>
+    <p>Nessuna fonte informativa è stata ancora inserita.</p>
+</section>
+{% endif %}
+
+{% if slot_list %}
+<section>
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Slot equipaggiamento</h2>
+    <div class="grid">
+        {% for s in slot_list %}
+        <article class="card">
+            <div class="card-header"><span class="card-title">{{ s['nome'] }}</span></div>
+            <div class="card-body">
+                <div class="stat-row"><span class="stat-label">Codice</span><span class="stat-value">{{ s['codice_slot'] }}</span></div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="7" width="20" height="14" rx="2" ry="2" stroke="#d4af37" stroke-width="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessuno slot equipaggiamento definito</h3>
+    <p>Nessuno slot è stato ancora inserito.</p>
+</section>
+{% endif %}
+
+<section id="sezione-abilita">
+    <h2><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M13 10V3L4 14h7v7l9-11h-7z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Abilità</h2>
+    <p>Gestione abilità e versioni storiche per classe.</p>
+    <a href="/catalogo/abilita" class="btn-annulla">Gestisci abilità</a>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.classi-grid { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.classe-card { background: linear-gradient(135deg, rgba(212, 175, 55, 0.03), rgba(139, 26, 26, 0.02)); border-color: var(--border-gold); }
+.classe-card .card-title { color: var(--accent-gold); }
+</style>
+{% endblock %}

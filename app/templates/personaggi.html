@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Personaggi - Diablo Build Advisor{% endblock %}
+
+{% block content %}
+<section id="form-personaggio" class="card personaggio-form">
+    <h2><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14" stroke="#d4af37" stroke-width="3" stroke-linecap="round"/></svg></span>Nuovo personaggio</h2>
+    <form method="POST" action="/personaggi/nuovo">
+        <div class="form-grid">
+            <div class="form-col">
+                <label for="nome">Nome personaggio <span class="obbligatorio">*</span></label>
+                <input type="text" id="nome" name="nome" required maxlength="100">
+
+                <label for="classe">Classe <span class="obbligatorio">*</span></label>
+                <select id="classe" name="classe" required>
+                    <option value="">-- Seleziona classe --</option>
+                    <option value="Barbaro"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 5l7 7m0 0l-7 7m7-7l-7 7" stroke="#8b1a1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Barbaro</option>
+                    <option value="Incantatrice"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6L12 18M6 12L18 12" stroke="#a855f7" stroke-width="2" stroke-linecap="round"/></svg> Incantatrice</option>
+                    <option value="Negromante"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#4b0082" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8L12 16M8 12L16 12" stroke="#4b0082" stroke-width="2" stroke-linecap="round"/></svg> Negromante</option>
+                    <option value="Stregone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#a52a2a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8L12 16M8 12L16 12" stroke="#a52a2a" stroke-width="2" stroke-linecap="round"/></svg> Stregone</option>
+                    <option value="Druido"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#228b22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 6L12 18M6 12L18 12" stroke="#228b22" stroke-width="2" stroke-linecap="round"/></svg> Druido</option>
+                    <option value="Cacciatore"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="10" stroke="#8b4513" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 8L12 16M8 12L16 12" stroke="#8b4513" stroke-width="2" stroke-linecap="round"/></svg> Cacciatore</option>
+                </select>
+
+                <label for="modalita">Modalità <span class="obbligatorio">*</span></label>
+                <select id="modalita" name="modalita" required>
+                    <option value="">-- Seleziona modalità --</option>
+                    <option value="Eterno"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3a9 9 0 100 18 9 9 0 000-18z" stroke="#8b6b2f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 12h.01" stroke="#8b6b2f" stroke-width="2" stroke-linecap="round"/></svg> Eterno</option>
+                    <option value="Stagionale"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#b87333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> Stagionale</option>
+                </select>
+            </div>
+            <div class="form-col">
+                <label for="numero_stagione">Numero stagione (solo se stagionale)</label>
+                <input type="number" id="numero_stagione" name="numero_stagione" min="1" max="100">
+
+                <label for="livello_personaggio">Livello personaggio <span class="obbligatorio">*</span></label>
+                <input type="number" id="livello_personaggio" name="livello_personaggio" min="1" max="60" value="1">
+
+                <label for="livello_paragon">Livello Paragon</label>
+                <input type="number" id="livello_paragon" name="livello_paragon" min="0" value="0">
+            </div>
+        </div>
+
+        <label for="obiettivo">Obiettivo di gioco</label>
+        <input type="text" id="obiettivo" name="obiettivo" maxlength="200">
+
+        <label for="note">Note</label>
+        <textarea id="note" name="note" rows="3"></textarea>
+
+        <button type="submit">Crea personaggio</button>
+    </form>
+</section>
+
+{% if personaggi %}
+<section id="elenco-personaggi">
+    <h2><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 7l-8-4-8 4M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="7" r="4" stroke="#d4af37" stroke-width="2"/></svg></span>Personaggi salvati</h2>
+    <div class="grid grid-two personaggi-grid">
+        {% for p in personaggi %}
+        <article class="card personaggio-card-scheda">
+            <div class="scheda-header">
+                <div class="portrait-large">
+                                    <img src="/static/img/class-{{ p['classe']|lower()}}.svg" class="portrait-img" alt="Ritratto {{ p['classe'] }}"/>
+                                </div>
+                <div class="scheda-titolo">
+                    <img src="/static/img/class-{{ p['classe']|lower()}}.svg" class="class-icon-img" alt="{{ p['classe'] }}"/>
+                    <span class="card-title">{{ p['nome'] }}</span>
+                </div>
+            </div>
+            <div class="scheda-statistiche">
+                <div class="stat-row"><span class="stat-label">Classe</span><span class="stat-value">{{ p['classe'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Modalità</span><span class="stat-value">{{ p['modalita'] }}</span></div>
+                {% if p['numero_stagione'] %}<div class="stat-row"><span class="stat-label">Stagione</span><span class="stat-value">{{ p['numero_stagione'] }}</span></div>{% endif %}
+                <div class="stat-row"><span class="stat-label">Livello</span><span class="stat-value">{{ p['livello_personaggio'] }}</span></div>
+                <div class="stat-row"><span class="stat-label">Paragon</span><span class="stat-value">{{ p['livello_paragon'] }}</span></div>
+            </div>
+            <div class="scheda-azioni">
+                <a href="/personaggi/{{ p['id'] }}/consigli" class="btn-annulla secondary">Consigli</a>
+                <a href="/personaggi/{{ p['id'] }}/build" class="btn-annulla secondary">Build</a>
+                <form method="POST" action="/personaggi/{{ p['id'] }}/elimina" style="display:inline;" onsubmit="return confirm('Eliminare questo personaggio? L'operazione è irreversibile.');">
+                    <button type="submit" class="btn-annulla danger">Elimina</button>
+                </form>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</section>
+{% else %}
+<section class="empty-state">
+    <h3><span class="icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M19 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2M16 3.13A4 4 0 0113 2.03V1L8.5 5.5 2 10.98l4.5 4.5L16 14.02V2.03A4 4 0 0119 3.13Z" stroke="#d4af37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>Nessun personaggio salvato</h3>
+    <p>Creane uno usando il modulo sopra.</p>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.personaggio-form { max-width: 700px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem; }
+.form-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.personaggi-grid { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.personaggio-card-scheda { background: linear-gradient(135deg, rgba(212, 175, 55, 0.03), rgba(139, 26, 26, 0.02)); border-color: var(--border-gold); }
+.scheda-header { text-align: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-subtle); margin-bottom: 1rem; }
+.portrait-large { margin: 0 auto 0.75rem; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.6)); }
+.scheda-titolo { display: flex; align-items: center; justify-content: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+.scheda-titolo .class-icon { font-size: 2.5rem; }
+.scheda-titolo .card-title { font-size: 1.5rem; color: var(--text-gold); font-weight: 700; }
+.scheda-statistiche { display: flex; flex-direction: column; gap: 0.5rem; }
+.scheda-azioni { display: flex; gap: 0.75rem; margin-top: 1rem; }
+</style>
+{% endblock %}
